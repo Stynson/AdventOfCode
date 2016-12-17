@@ -168,8 +168,8 @@ def Rect(screen,(x,y)):
 
 def RotateColumn(screen,(column,count)):
 	N = len(screen)
-	tmp = screen[N-1][column]
 	for c in range(0,count):
+		tmp = screen[N-1][column]
 		for i in range(N-1,0,-1):
 			screen[i][column] = screen[i-1][column]
 		screen[0][column] = tmp
@@ -177,8 +177,8 @@ def RotateColumn(screen,(column,count)):
 
 def RotateRow(screen,(row,count)):
 	M = len(screen[0])
-	tmp = screen[row][M-1] 
 	for c in range(0,count):
+		tmp = screen[row][M-1] 
 		for j in range(M-1,0,-1):
 			screen[row][j] = screen[row][j-1]
 		screen[row][0] = tmp
@@ -203,15 +203,8 @@ def Solve(data):
 	for line in data.split("\n"):
 		function,params = Parse(line)
 		function(screen,params)
-		print line
-		result = 0
-		for row in screen:
-			result += row.count(True) 
-		print result
-		for row in screen:
-			for value in row: 
-				print str(int(value)) + ",",
-			print
+	for row in screen:
+		print "".join([ "O" if x else " " for x in row])
 	result = 0
 	for row in screen:
 		result += row.count(True) 
