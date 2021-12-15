@@ -110,6 +110,77 @@ let raw2 = `39967846581176289941286747935929486749961359997167987995979948166498
 5945216179952287717152924491637935924252515649995719497238547218985589346633498818199929837938957484
 5176294921179174797929296797728992356996496523593148488852661385215779189976296393174519842575959638`;
 
+class PriorityQueue {
+  constructor(comparator = (a, b) => a > b) {
+    this._heap = [];
+    this._comparator = comparator;
+    this.top = 0;
+    this.parent = (i) => ((i + 1) >>> 1) - 1;
+    this.left = (i) => (i << 1) + 1;
+    this.right = (i) => (i + 1) << 1;
+  }
+  size() {
+    return this._heap.length;
+  }
+  isEmpty() {
+    return this.size() == 0;
+  }
+  peek() {
+    return this._heap[this.top];
+  }
+  push(...values) {
+    values.forEach((value) => {
+      this._heap.push(value);
+      this._siftUp();
+    });
+    return this.size();
+  }
+  pop() {
+    const poppedValue = this.peek();
+    const bottom = this.size() - 1;
+    if (bottom > this.top) {
+      this._swap(this.top, bottom);
+    }
+    this._heap.pop();
+    this._siftDown();
+    return poppedValue;
+  }
+  replace(value) {
+    const replacedValue = this.peek();
+    this._heap[this.top] = value;
+    this._siftDown();
+    return replacedValue;
+  }
+  _greater(i, j) {
+    return this._comparator(this._heap[i], this._heap[j]);
+  }
+  _swap(i, j) {
+    [this._heap[i], this._heap[j]] = [this._heap[j], this._heap[i]];
+  }
+  _siftUp() {
+    let node = this.size() - 1;
+    while (node > this.top && this._greater(node, this.parent(node))) {
+      this._swap(node, this.parent(node));
+      node = this.parent(node);
+    }
+  }
+  _siftDown() {
+    let node = this.top;
+    while (
+      (this.left(node) < this.size() && this._greater(this.left(node), node)) ||
+      (this.right(node) < this.size() && this._greater(this.right(node), node))
+    ) {
+      let maxChild =
+        this.right(node) < this.size() &&
+        this._greater(this.right(node), this.left(node))
+          ? this.right(node)
+          : this.left(node);
+      this._swap(node, maxChild);
+      node = maxChild;
+    }
+  }
+}
+
 let generateBigMap = (matrix) => {
   let bigMatrix = [];
   matrix.forEach((row) => {
@@ -152,25 +223,21 @@ let solve = (raw) => {
 
   let h = heuristic.bind(null, matrix.length, matrix[0].length);
 
-  let openSet = {}; //stored with f score
-  openSet["0,0"] = h([0, 0]);
+  let openSet = new PriorityQueue((a, b) => a[1] < b[1]);
+  openSet.push(["0,0", h([0, 0])]);
   let goal = `${matrix.length - 1},${matrix[0].length - 1}`;
   let gScore = {};
   gScore["0,0"] = 0;
 
   let cameFrom = {};
 
-  while (Object.values(openSet).length > 0) {
-    let lowest = Object.entries(openSet).reduce((acc, [coord, g]) => {
-      return acc[1] < g ? acc : [coord, g];
-    }, Infinity);
-    let current = lowest[0];
+  while (!openSet.isEmpty()) {
+    let current = openSet.pop()[0];
     if (current === goal) {
       console.log("finished!", current);
       let curr = current;
       let sum = 0;
       while (curr) {
-        //        matrix[curr.split(",")[0]][curr.split(",")[1]] = "X";
         sum += matrix[curr.split(",")[0]][curr.split(",")[1]];
         curr = cameFrom[curr];
       }
@@ -178,7 +245,6 @@ let solve = (raw) => {
       console.log("---sum:", sum);
       break;
     }
-    delete openSet[current];
     let neighbourDiffs = [
       [1, 0],
       [-1, 0],
@@ -202,10 +268,13 @@ let solve = (raw) => {
         ) {
           cameFrom[neighbour.join(",")] = current;
           gScore[neighbour.join(",")] = costToReachIt;
-          openSet[neighbour.join(",")] = costToReachIt + h(neighbour);
+          openSet.push([neighbour.join(","), costToReachIt + h(neighbour)]);
         }
       }
     });
   }
 };
-solve(raw);
+const t0 = performance.now();
+solve(raw2);
+const t1 = performance.now();
+console.log(`Call to solve took ${t1 - t0} milliseconds.`);
